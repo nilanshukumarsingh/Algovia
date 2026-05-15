@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axiosClient from '../utils/axiosClient';
+import { Clock, Code2, CheckCircle2, XCircle, AlertTriangle, ChevronRight, X } from 'lucide-react';
 
 const SubmissionHistory = ({ problemId }) => {
   const [submissions, setSubmissions] = useState([]);
@@ -12,167 +13,116 @@ const SubmissionHistory = ({ problemId }) => {
       try {
         setLoading(true);
         const response = await axiosClient.get(`/problem/submittedProblem/${problemId}`);
-         setSubmissions(response.data || []);
-        setError(null);
+        setSubmissions(response.data || []);
       } catch (err) {
-        setError('Failed to fetch submission history');
-        console.error(err);
+        setError('Failed to fetch history');
       } finally {
         setLoading(false);
       }
     };
-
     fetchSubmissions();
   }, [problemId]);
 
-  const getStatusColor = (status) => {
+  const getStatusStyle = (status) => {
     switch (status) {
-      case 'accepted': return 'badge-success';
-      case 'wrong': return 'badge-error';
-      case 'error': return 'badge-warning';
-      case 'pending': return 'badge-info';
-      default: return 'badge-neutral';
+      case 'accepted': return { icon: <CheckCircle2 size={14} />, class: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' };
+      case 'wrong': return { icon: <XCircle size={14} />, class: 'text-red-400 border-red-500/20 bg-red-500/10' };
+      case 'error': return { icon: <AlertTriangle size={14} />, class: 'text-amber-400 border-amber-500/20 bg-amber-500/10' };
+      default: return { icon: <Clock size={14} />, class: 'text-slate-400 border-slate-500/20 bg-slate-500/10' };
     }
   };
 
   const formatMemory = (memory) => {
-    if (memory < 1024) return `${memory} kB`;
-    return `${(memory / 1024).toFixed(2)} MB`;
+    if (memory < 1024) return `${memory} KB`;
+    return `${(memory / 1024).toFixed(1)} MB`;
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
-  };
+  if (loading) return <div className="flex justify-center py-10"><div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-400" /></div>;
 
-  if (loading) {
+  if (submissions.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-error shadow-lg my-4">
-        <div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{error}</span>
-        </div>
+      <div className="rounded-xl border border-white/5 bg-white/[0.02] py-12 text-center">
+        <p className="text-sm font-medium text-slate-500">No submissions yet. Solve it first!</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-6 text-center">Submission History</h2>
-      
-      {submissions.length === 0 ? (
-        <div className="alert alert-info shadow-lg">
-          <div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span>No submissions found for this problem</span>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="table table-zebra w-full">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Language</th>
-                  <th>Status</th>
-                  <th>Runtime</th>
-                  <th>Memory</th>
-                  <th>Test Cases</th>
-                  <th>Submitted</th>
-                  <th>Actions</th>
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-xl border border-white/5 bg-slate-950/40">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-white/5 bg-white/[0.02]">
+              <th className="px-4 py-3 font-bold text-slate-400">Status</th>
+              <th className="px-4 py-3 font-bold text-slate-400">Runtime</th>
+              <th className="px-4 py-3 font-bold text-slate-400">Memory</th>
+              <th className="px-4 py-3 text-right font-bold text-slate-400">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {submissions.map((sub) => {
+              const style = getStatusStyle(sub.status);
+              return (
+                <tr 
+                  key={sub._id} 
+                  className="group cursor-pointer hover:bg-white/[0.03] transition-colors"
+                  onClick={() => setSelectedSubmission(sub)}
+                >
+                  <td className="px-4 py-4">
+                    <div className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${style.class}`}>
+                      {style.icon} {sub.status}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 font-mono text-slate-300">{sub.runtime}s</td>
+                  <td className="px-4 py-4 font-mono text-slate-300">{formatMemory(sub.memory)}</td>
+                  <td className="px-4 py-4 text-right text-slate-500 tabular-nums">
+                    {new Date(sub.createdAt).toLocaleDateString()}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {submissions.map((sub, index) => (
-                  <tr key={sub._id}>
-                    <td>{index + 1}</td>
-                    <td className="font-mono">{sub.language}</td>
-                    <td>
-                      <span className={`badge ${getStatusColor(sub.status)}`}>
-                        {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
-                      </span>
-                    </td>
-                    
-                    <td className="font-mono">{sub.runtime}sec</td>
-                    <td className="font-mono">{formatMemory(sub.memory)}</td>
-                    <td className="font-mono">{sub.testCasesPassed}/{sub.testCasesTotal}</td>
-                    <td>{formatDate(sub.createdAt)}</td>
-                    <td>
-                      <button 
-                        className="btn btn-s btn-outline"
-                        onClick={() => setSelectedSubmission(sub)}
-                      >
-                        Code
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-          <p className="mt-4 text-sm text-gray-500">
-            Showing {submissions.length} submissions
-          </p>
-        </>
-      )}
-
-      {/* Code View Modal */}
+      {/* Code Modal */}
       {selectedSubmission && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-5xl">
-            <h3 className="font-bold text-lg mb-4">
-              Submission Details: {selectedSubmission.language}
-            </h3>
-            
-            <div className="mb-4">
-              <div className="flex flex-wrap gap-2 mb-2">
-                <span className={`badge ${getStatusColor(selectedSubmission.status)}`}>
-                  {selectedSubmission.status}
-                </span>
-                <span className="badge badge-outline">
-                  Runtime: {selectedSubmission.runtime}s
-                </span>
-                <span className="badge badge-outline">
-                  Memory: {formatMemory(selectedSubmission.memory)}
-                </span>
-                <span className="badge badge-outline">
-                  Passed: {selectedSubmission.testCasesPassed}/{selectedSubmission.testCasesTotal}
-                </span>
-              </div>
-              
-              {selectedSubmission.errorMessage && (
-                <div className="alert alert-error mt-2">
-                  <div>
-                    <span>{selectedSubmission.errorMessage}</span>
-                  </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl max-h-[80vh] flex flex-col rounded-3xl border border-white/10 bg-[#07080d] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 p-6">
+              <div className="flex items-center gap-3">
+                <Code2 className="text-cyan-400" />
+                <div>
+                  <h3 className="font-extrabold text-white">Submission Code</h3>
+                  <p className="text-xs text-slate-500 font-mono uppercase">{selectedSubmission.language}</p>
                 </div>
-              )}
+              </div>
+              <button onClick={() => setSelectedSubmission(null)} className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition">
+                <X size={20} />
+              </button>
             </div>
             
-            <pre className="p-4 bg-gray-900 text-gray-100 rounded overflow-x-auto">
-              <code>{selectedSubmission.code}</code>
-            </pre>
-            
-            <div className="modal-action">
-              <button 
-                className="btn"
-                onClick={() => setSelectedSubmission(null)}
-              >
-                Close
-              </button>
+            <div className="flex-1 overflow-auto p-6 bg-slate-950/50">
+               <pre className="font-mono text-sm leading-relaxed text-slate-300">
+                 <code>{selectedSubmission.code}</code>
+               </pre>
+            </div>
+
+            <div className="border-t border-white/10 p-6 flex gap-4 bg-slate-900/40">
+                <div className="flex-1 grid grid-cols-3 gap-4">
+                   <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">Runtime</p>
+                      <p className="text-sm font-bold text-white">{selectedSubmission.runtime}s</p>
+                   </div>
+                   <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">Memory</p>
+                      <p className="text-sm font-bold text-white">{formatMemory(selectedSubmission.memory)}</p>
+                   </div>
+                   <div className="rounded-xl border border-white/5 bg-white/5 p-3">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase">Passed</p>
+                      <p className="text-sm font-bold text-white">{selectedSubmission.testCasesPassed}/{selectedSubmission.testCasesTotal}</p>
+                   </div>
+                </div>
             </div>
           </div>
         </div>

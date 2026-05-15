@@ -1,81 +1,106 @@
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import axiosClient from "../utils/axiosClient";
-import { Send } from 'lucide-react';
+import { Send, Bot, User, Loader2 } from 'lucide-react';
 
-function ChatAi({problem}) {
+function ChatAi({ problem }) {
     const [messages, setMessages] = useState([
-        { role: 'model', parts:[{text: "Hi, How are you"}]},
-        { role: 'user', parts:[{text: "I am Good"}]}
+        { role: 'model', parts: [{ text: "Hello! I'm your Algovia AI assistant. Stuck on this problem? I can help with hints or explanations." }] },
     ]);
+    const [isTyping, setIsTyping] = useState(false);
 
-    const { register, handleSubmit, reset,formState: {errors} } = useForm();
+    const { register, handleSubmit, reset, formState: { isValid } } = useForm({
+        mode: 'onChange'
+    });
     const messagesEndRef = useRef(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, isTyping]);
 
     const onSubmit = async (data) => {
-        
-        setMessages(prev => [...prev, { role: 'user', parts:[{text: data.message}] }]);
+        const userMessage = data.message;
+        const newMessages = [...messages, { role: 'user', parts: [{ text: userMessage }] }];
+        setMessages(newMessages);
         reset();
+        setIsTyping(true);
 
         try {
-            
             const response = await axiosClient.post("/ai/chat", {
-                messages:messages,
-                title:problem.title,
-                description:problem.description,
+                messages: newMessages,
+                title: problem.title,
+                description: problem.description,
                 testCases: problem.visibleTestCases,
-                startCode:problem.startCode
+                startCode: problem.startCode
             });
 
-           
             setMessages(prev => [...prev, { 
                 role: 'model', 
-                parts:[{text: response.data.message}] 
+                parts: [{ text: response.data.message }] 
             }]);
         } catch (error) {
-            console.error("API Error:", error);
+            console.error("AI Error:", error);
             setMessages(prev => [...prev, { 
                 role: 'model', 
-                parts:[{text: "Error from AI Chatbot"}]
+                parts: [{ text: "I'm sorry, I encountered an error. Please try again later." }]
             }]);
+        } finally {
+            setIsTyping(false);
         }
     };
 
     return (
-        <div className="flex flex-col h-screen max-h-[80vh] min-h-[500px]">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex flex-col h-full bg-[#0c0c14] rounded-xl border border-white/5 overflow-hidden">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
                 {messages.map((msg, index) => (
-                    <div 
-                        key={index} 
-                        className={`chat ${msg.role === "user" ? "chat-end" : "chat-start"}`}
-                    >
-                        <div className="chat-bubble bg-base-200 text-base-content">
+                    <div key={index} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
+                            msg.role === "user" 
+                            ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-400" 
+                            : "border-white/10 bg-white/5 text-slate-400"
+                        }`}>
+                            {msg.role === "user" ? <User size={16} /> : <Bot size={16} />}
+                        </div>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                            msg.role === "user" 
+                            ? "bg-cyan-300/10 text-cyan-100 border border-cyan-300/10" 
+                            : "bg-white/[0.03] text-slate-300 border border-white/5"
+                        }`}>
                             {msg.parts[0].text}
                         </div>
                     </div>
                 ))}
+                {isTyping && (
+                    <div className="flex gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400">
+                            <Bot size={16} />
+                        </div>
+                        <div className="flex items-center gap-1 rounded-2xl bg-white/[0.03] px-4 py-2.5 border border-white/5">
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:0s]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:0.2s]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:0.4s]" />
+                        </div>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
-            <form 
-                onSubmit={handleSubmit(onSubmit)} 
-                className="sticky bottom-0 p-4 bg-base-100 border-t"
-            >
-                <div className="flex items-center">
+
+            {/* Input Area */}
+            <form onSubmit={handleSubmit(onSubmit)} className="p-4 bg-slate-900/40 border-t border-white/5">
+                <div className="relative flex items-center">
                     <input 
-                        placeholder="Ask me anything" 
-                        className="input input-bordered flex-1" 
-                        {...register("message", { required: true, minLength: 2 })}
+                        {...register("message", { required: true })}
+                        placeholder="Ask for a hint..." 
+                        autoComplete="off"
+                        className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 pr-12 text-sm text-white outline-none transition focus:border-cyan-300/50" 
                     />
                     <button 
                         type="submit" 
-                        className="btn btn-ghost ml-2"
-                        disabled={errors.message}
+                        disabled={!isValid || isTyping}
+                        className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg text-cyan-400 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:text-slate-600"
                     >
-                        <Send size={20} />
+                        {isTyping ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </button>
                 </div>
             </form>

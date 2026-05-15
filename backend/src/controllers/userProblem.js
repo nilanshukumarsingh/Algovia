@@ -5,8 +5,6 @@ const Submission = require("../models/submission");
 const SolutionVideo = require("../models/solutionVideo")
 
 const createProblem = async (req,res)=>{
-   
-  // API request to authenticate user:
     const {title,description,difficulty,tags,
         visibleTestCases,hiddenTestCases,startCode,
         referenceSolution, problemCreator
@@ -14,37 +12,20 @@ const createProblem = async (req,res)=>{
 
 
     try{
-       
       for(const {language,completeCode} of referenceSolution){
-         
-
-        // source_code:
-        // language_id:
-        // stdin: 
-        // expectedOutput:
-
         const languageId = getLanguageById(language);
-          
-        // I am creating Batch submission
-        const submissions = visibleTestCases.map((testcase)=>({
+
+        const allTestCases = [...visibleTestCases, ...(hiddenTestCases || [])];
+        const submissions = allTestCases.map((testcase)=>({
             source_code:completeCode,
             language_id: languageId,
             stdin: testcase.input,
             expected_output: testcase.output
         }));
 
-
         const submitResult = await submitBatch(submissions);
-        // console.log(submitResult);
-
         const resultToken = submitResult.map((value)=> value.token);
-
-        // ["db54881d-bcf5-4c7b-a2e3-d33fe7e25de7","ecc52a9b-ea80-4a00-ad50-4ab6cc3bb2a1","1b35ec3b-5776-48ef-b646-d5522bdeb2cc"]
-        
-       const testResult = await submitToken(resultToken);
-
-
-       console.log(testResult);
+        const testResult = await submitToken(resultToken);
 
        for(const test of testResult){
         if(test.status_id!=3){
@@ -54,9 +35,6 @@ const createProblem = async (req,res)=>{
 
       }
 
-
-      // We can store it in our DB
-
     const userProblem =  await Problem.create({
         ...req.body,
         problemCreator: req.result._id
@@ -64,8 +42,8 @@ const createProblem = async (req,res)=>{
 
       res.status(201).send("Problem Saved Successfully");
     }
-    catch(err){
-        res.status(400).send("Error: "+err);
+    catch (err) {
+        res.status(400).json({ message: "Failed to create problem. Ensure reference solutions are valid." });
     }
 }
 
@@ -86,38 +64,24 @@ const updateProblem = async (req,res)=>{
     const DsaProblem =  await Problem.findById(id);
     if(!DsaProblem)
     {
-      return res.status(404).send("ID is not persent in server");
+      return res.status(404).send("ID is not present in server");
     }
       
     for(const {language,completeCode} of referenceSolution){
-         
-
-      // source_code:
-      // language_id:
-      // stdin: 
-      // expectedOutput:
-
       const languageId = getLanguageById(language);
-        
-      // I am creating Batch submission
-      const submissions = visibleTestCases.map((testcase)=>({
+
+      const allTestCases = [...visibleTestCases, ...(hiddenTestCases || [])];
+      const submissions = allTestCases.map((testcase)=>({
           source_code:completeCode,
           language_id: languageId,
           stdin: testcase.input,
           expected_output: testcase.output
       }));
 
-
       const submitResult = await submitBatch(submissions);
-      // console.log(submitResult);
-
       const resultToken = submitResult.map((value)=> value.token);
+      const testResult = await submitToken(resultToken);
 
-      // ["db54881d-bcf5-4c7b-a2e3-d33fe7e25de7","ecc52a9b-ea80-4a00-ad50-4ab6cc3bb2a1","1b35ec3b-5776-48ef-b646-d5522bdeb2cc"]
-      
-     const testResult = await submitToken(resultToken);
-
-    //  console.log(testResult);
 
      for(const test of testResult){
       if(test.status_id!=3){
@@ -127,14 +91,13 @@ const updateProblem = async (req,res)=>{
 
     }
 
-
   const newProblem = await Problem.findByIdAndUpdate(id , {...req.body}, {runValidators:true, new:true});
    
   res.status(200).send(newProblem);
   }
-  catch(err){
-      res.status(500).send("Error: "+err);
-  }
+    catch (err) {
+        res.status(500).json({ message: "Failed to update problem." });
+    }
 }
 
 const deleteProblem = async(req,res)=>{
@@ -148,17 +111,14 @@ const deleteProblem = async(req,res)=>{
    const deletedProblem = await Problem.findByIdAndDelete(id);
 
    if(!deletedProblem)
-    return res.status(404).send("Problem is Missing");
+    return res.status(404).json({ message: "Problem not found" });
 
-
-   res.status(200).send("Successfully Deleted");
+   res.status(200).json({ message: "Problem successfully deleted" });
   }
-  catch(err){
-     
-    res.status(500).send("Error: "+err);
-  }
+    catch (err) {
+        res.status(500).json({ message: "Failed to delete problem." });
+    }
 }
-
 
 const getProblemById = async(req,res)=>{
 
@@ -169,8 +129,6 @@ const getProblemById = async(req,res)=>{
       return res.status(400).send("ID is Missing");
 
     const getProblem = await Problem.findById(id).select('_id title description difficulty tags visibleTestCases startCode referenceSolution ');
-   
-    // video ka jo bhi url wagera le aao
 
    if(!getProblem)
     return res.status(404).send("Problem is Missing");
@@ -192,9 +150,9 @@ const getProblemById = async(req,res)=>{
    res.status(200).send(getProblem);
 
   }
-  catch(err){
-    res.status(500).send("Error: "+err);
-  }
+    catch (err) {
+        res.status(500).json({ message: "Failed to retrieve problem details." });
+    }
 }
 
 const getAllProblem = async(req,res)=>{
@@ -204,13 +162,13 @@ const getAllProblem = async(req,res)=>{
     const getProblem = await Problem.find({}).select('_id title difficulty tags');
 
    if(getProblem.length==0)
-    return res.status(404).send("Problem is Missing");
+    return res.status(404).json({ message: "No problems found" });
 
 
    res.status(200).send(getProblem);
   }
-  catch(err){
-    res.status(500).send("Error: "+err);
+  catch (err) {
+    res.status(500).json({ message: "Failed to fetch problems." });
   }
 }
 
@@ -251,8 +209,4 @@ res.status(200).json(ans);
   }
 }
 
-
-
 module.exports = {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem};
-
-

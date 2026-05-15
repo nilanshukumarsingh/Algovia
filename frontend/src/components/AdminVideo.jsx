@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import axiosClient from '../utils/axiosClient'
+import axiosClient from '../utils/axiosClient';
 import { NavLink } from 'react-router';
+import { Video, Trash2, Upload, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { PageBackground } from './ui/Primitives';
 
 const AdminVideo = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
 
   useEffect(() => {
     fetchProblems();
@@ -18,7 +19,7 @@ const AdminVideo = () => {
       const { data } = await axiosClient.get('/problem/getAllProblem');
       setProblems(data);
     } catch (err) {
-      setError('Failed to fetch problems');
+      setError('Failed to load problem set');
       console.error(err);
     } finally {
       setLoading(false);
@@ -26,101 +27,113 @@ const AdminVideo = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this problem?')) return;
+    if (!window.confirm('Are you sure you want to delete the video editorial for this problem?')) return;
     
     try {
       await axiosClient.delete(`/video/delete/${id}`);
-      setProblems(problems.filter(problem => problem._id !== id));
+      alert('Video deleted successfully');
+      fetchProblems(); // Refresh list
     } catch (err) {
-      setError(err);
-      console.log(err);
+      alert('Failed to delete video: ' + (err.response?.data?.message || err.message));
     }
   };
 
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-error shadow-lg my-4">
-        <div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{error.response.data.error}</span>
+      <div className="flex min-h-screen items-center justify-center bg-[#07080d]">
+        <PageBackground />
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-300/20 border-t-cyan-400" />
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Loading Library...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Video Upload and Delete</h1>
-      </div>
+    <div className="min-h-screen bg-[#07080d] text-slate-200">
+      <PageBackground />
+      
+      <div className="relative z-10 mx-auto max-w-5xl px-6 py-12">
+        <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <NavLink to="/admin" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 no-underline hover:text-cyan-300">
+              <ArrowLeft size={16} /> Back to Admin
+            </NavLink>
+            <h1 className="text-3xl font-extrabold text-white">Video Editorial Library</h1>
+            <p className="mt-2 text-slate-400">Manage video solutions and walkthroughs for all problems.</p>
+          </div>
+          <button onClick={fetchProblems} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white">
+            <RefreshCw size={16} /> Refresh
+          </button>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th className="w-1/12">#</th>
-              <th className="w-4/12">Title</th>
-              <th className="w-2/12">Difficulty</th>
-              <th className="w-3/12">Tags</th>
-              <th className="w-2/12">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {problems.map((problem, index) => (
-              <tr key={problem._id}>
-                <th>{index + 1}</th>
-                <td>{problem.title}</td>
-                <td>
-                  <span className={`badge ${
-                    problem.difficulty === 'Easy' 
-                      ? 'badge-success' 
-                      : problem.difficulty === 'Medium' 
-                        ? 'badge-warning' 
-                        : 'badge-error'
-                  }`}>
-                    {problem.difficulty}
-                  </span>
-                </td>
-                <td>
-                  <span className="badge badge-outline">
-                    {problem.tags}
-                  </span>
-                </td>
-                <td>
-                  <div className="flex space-x-1">
-                     <NavLink 
-                        to={`/admin/upload/${problem._id}`}
-                        className={`btn bg-blue-600`}
-                        >
-                        Upload
-                    </NavLink>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={() => handleDelete(problem._id)}
-                      className="btn btn-sm btn-error"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+        {error && (
+          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-200">
+            <AlertCircle size={20} />
+            <span className="text-sm font-semibold">{error}</span>
+          </div>
+        )}
+
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/50 backdrop-blur-sm">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-bottom border-white/5 bg-white/5">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Problem</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Status</th>
+                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-400">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {problems.map((problem) => (
+                <tr key={problem._id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="px-6 py-5">
+                    <div className="font-bold text-white">{problem.title}</div>
+                    <div className="mt-1 flex gap-2">
+                      <span className="text-[10px] font-bold uppercase text-slate-500">{problem.difficulty}</span>
+                      <span className="text-[10px] font-bold uppercase text-cyan-500/70">{problem.tags}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    {problem.secureUrl ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-400 uppercase">
+                        <Video size={12} /> Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-500/20 bg-slate-500/10 px-2 py-1 text-[10px] font-bold text-slate-400 uppercase">
+                        Missing
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center justify-center gap-2">
+                      <NavLink 
+                        to={`/admin/upload/${problem._id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-400 px-3 py-1.5 text-xs font-bold text-slate-950 no-underline transition hover:bg-cyan-300"
+                      >
+                        <Upload size={14} /> {problem.secureUrl ? 'Update' : 'Upload'}
+                      </NavLink>
+                      {problem.secureUrl && (
+                        <button 
+                          onClick={() => handleDelete(problem._id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {problems.length === 0 && (
+            <div className="py-20 text-center">
+              <p className="text-slate-500">No problems found in the database.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

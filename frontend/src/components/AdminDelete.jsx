@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import axiosClient from '../utils/axiosClient'
+import axiosClient from '../utils/axiosClient';
+import { NavLink } from 'react-router';
+import { Trash2, ArrowLeft, RefreshCw, AlertCircle, FileX } from 'lucide-react';
+import { PageBackground } from './ui/Primitives';
 
 const AdminDelete = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
 
   useEffect(() => {
     fetchProblems();
@@ -25,91 +27,97 @@ const AdminDelete = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this problem?')) return;
+    if (!window.confirm('WARNING: This will permanently delete the problem and all user submissions. Continue?')) return;
     
     try {
       await axiosClient.delete(`/problem/delete/${id}`);
       setProblems(problems.filter(problem => problem._id !== id));
+      alert('Problem deleted successfully');
     } catch (err) {
-      setError('Failed to delete problem');
-      console.error(err);
+      alert('Failed to delete problem: ' + (err.response?.data?.message || err.message));
     }
   };
 
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-error shadow-lg my-4">
-        <div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{error}</span>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#07080d]">
+        <PageBackground />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-300/20 border-t-cyan-400" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Delete Problems</h1>
-      </div>
+    <div className="min-h-screen bg-[#07080d] text-slate-200">
+      <PageBackground />
+      
+      <div className="relative z-10 mx-auto max-w-5xl px-6 py-12">
+        <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <NavLink to="/admin" className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 no-underline hover:text-cyan-300">
+              <ArrowLeft size={16} /> Back to Admin
+            </NavLink>
+            <h1 className="text-3xl font-extrabold text-white">Delete Problems</h1>
+            <p className="mt-2 text-slate-400">Permanently remove coding challenges from the platform.</p>
+          </div>
+          <button onClick={fetchProblems} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white">
+            <RefreshCw size={16} /> Refresh
+          </button>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th className="w-1/12">#</th>
-              <th className="w-4/12">Title</th>
-              <th className="w-2/12">Difficulty</th>
-              <th className="w-3/12">Tags</th>
-              <th className="w-2/12">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {problems.map((problem, index) => (
-              <tr key={problem._id}>
-                <th>{index + 1}</th>
-                <td>{problem.title}</td>
-                <td>
-                  <span className={`badge ${
-                    problem.difficulty === 'Easy' 
-                      ? 'badge-success' 
-                      : problem.difficulty === 'Medium' 
-                        ? 'badge-warning' 
-                        : 'badge-error'
-                  }`}>
-                    {problem.difficulty}
-                  </span>
-                </td>
-                <td>
-                  <span className="badge badge-outline">
-                    {problem.tags}
-                  </span>
-                </td>
-                <td>
-                  <div className="flex space-x-2">
+        {error && (
+          <div className="mb-8 flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-200">
+            <AlertCircle size={20} />
+            <span className="text-sm font-semibold">{error}</span>
+          </div>
+        )}
+
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/50 backdrop-blur-sm">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-white/5 bg-white/5">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">#</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Problem Title</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Difficulty</th>
+                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-400">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {problems.map((problem, index) => (
+                <tr key={problem._id} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="px-6 py-5 text-sm font-medium text-slate-500">{index + 1}</td>
+                  <td className="px-6 py-5 text-sm font-bold text-white">{problem.title}</td>
+                  <td className="px-6 py-5">
+                    <span className={`inline-flex rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      problem.difficulty === 'easy' 
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400' 
+                        : problem.difficulty === 'medium' 
+                          ? 'border-amber-500/20 bg-amber-500/10 text-amber-400' 
+                          : 'border-red-500/20 bg-red-500/10 text-red-400'
+                    }`}>
+                      {problem.difficulty}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5 text-center">
                     <button 
                       onClick={() => handleDelete(problem._id)}
-                      className="btn btn-sm btn-error"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/10 px-4 py-2 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
                     >
-                      Delete
+                      <Trash2 size={14} /> Delete Problem
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {problems.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <FileX size={48} className="mb-4 text-slate-700" />
+              <p className="text-slate-500">No problems found.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

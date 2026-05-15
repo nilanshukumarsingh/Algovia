@@ -8,7 +8,7 @@ const userMiddleware = async (req,res,next)=>{
         
         const {token} = req.cookies;
         if(!token)
-            throw new Error("Token is not persent");
+            throw new Error("Token is not present");
 
         const payload = jwt.verify(token,process.env.JWT_KEY);
 
@@ -24,12 +24,14 @@ const userMiddleware = async (req,res,next)=>{
             throw new Error("User Doesn't Exist");
         }
 
-        // Redis ke blockList mein persent toh nahi hai
-
-        const IsBlocked = await redisClient.exists(`token:${token}`);
-
-        if(IsBlocked)
-            throw new Error("Invalid Token");
+        try {
+            const IsBlocked = await redisClient.exists(`token:${token}`);
+            if(IsBlocked)
+                throw new Error("Invalid Token");
+        } catch (redisErr) {
+            // Fail open if Redis is down
+            console.error("Redis error during token check:", redisErr.message);
+        }
 
         req.result = result;
 
@@ -37,7 +39,7 @@ const userMiddleware = async (req,res,next)=>{
         next();
     }
     catch(err){
-        res.status(401).send("Error: "+ err.message)
+        res.status(401).json({ message: "Unauthorized" })
     }
 
 }

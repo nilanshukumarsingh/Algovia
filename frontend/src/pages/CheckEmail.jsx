@@ -1,49 +1,48 @@
-import { useLocation, Link } from "react-router";
+import { Link, useLocation } from "react-router";
+import { ArrowRight, MailCheck } from "lucide-react";
+import { BrandMark, PageBackground } from "../components/ui/Primitives";
 
 export default function CheckEmail() {
   const location = useLocation();
   const email = location.state?.email || "your email address";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full text-center">
-        
-        <div className="text-6xl mb-4">📧</div>
-
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-          Verify your email
-        </h1>
-
-        <p className="text-gray-600 mb-4">
-          We’ve sent a verification link to
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07080d] px-4 py-10 text-slate-100">
+      <PageBackground />
+      <section className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-slate-950/75 p-6 text-center shadow-2xl shadow-black/30 backdrop-blur sm:p-8">
+        <div className="mx-auto mb-6 flex justify-center">
+          <BrandMark className="h-14 w-14 rounded-2xl" />
+        </div>
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300/10 text-emerald-200">
+          <MailCheck size={24} />
+        </div>
+        <h1 className="text-2xl font-extrabold text-white">Check your email</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-400">
+          We sent a verification message to <span className="font-semibold text-cyan-200 break-all">{email}</span>.
         </p>
 
-        <p className="font-semibold text-orange-600 break-all mb-6">
-          {email}
-        </p>
-
-        <div className="space-y-3">
+        <div className="mt-8 space-y-3">
           <a
             href="https://mail.google.com"
             target="_blank"
             rel="noreferrer"
-            className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:-translate-y-0.5 hover:bg-cyan-200 no-underline"
           >
-            Open Gmail
+            Open Gmail <ArrowRight size={16} />
           </a>
 
           <Link
             to="/login"
-            className="block w-full border border-gray-300 py-3 rounded-xl text-gray-700 font-semibold hover:bg-gray-100 transition"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white no-underline"
           >
-            Go to Login
+            Go to login
           </Link>
         </div>
 
-        <p className="text-sm text-gray-500 mt-6">
-          Didn’t receive the email? Check spam or promotions folder.
+        <p className="mt-6 text-sm leading-6 text-slate-500">
+          No message yet? Check spam or promotions, then try signing in after verification.
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
