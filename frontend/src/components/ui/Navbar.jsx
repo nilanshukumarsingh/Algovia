@@ -1,93 +1,113 @@
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { Github } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Navbar({ isAuthenticated, rightSlot }) {
+  const location = useLocation();
 
-  const navLinkClass = ({ isActive }) =>
-    `relative px-3 py-2 text-sm font-semibold transition-colors duration-200 no-underline sm:px-4
-     ${isActive
-      ? "text-cyan-300 after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-4/5 after:rounded-full after:bg-cyan-400 after:content-['']"
-      : "text-slate-400 hover:text-white"
-    }`;
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Problems", path: "/problems" },
+  ];
 
   return (
-    <nav className="sticky top-0 z-50 h-16 border-b border-white/10 backdrop-blur-md overflow-hidden">
-      {/* Navbar Base */}
-      <div className="absolute inset-0 z-0 bg-black/50"></div>
-
-      {/* Animated Shader Effect */}
-      <motion.div
-        className="absolute inset-0 z-0 opacity-30 mix-blend-screen blur-xl"
-        animate={{
-          background: [
-            "linear-gradient(90deg, rgba(225,29,72,0.3) 0%, rgba(103,232,249,0.3) 100%)",
-            "linear-gradient(90deg, rgba(103,232,249,0.3) 0%, rgba(225,29,72,0.3) 100%)",
-            "linear-gradient(90deg, rgba(225,29,72,0.3) 0%, rgba(103,232,249,0.3) 100%)"
-          ]
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-      />
-
-      <div className="relative z-10 mx-auto flex h-full max-w-[1152px] items-center justify-between px-4 sm:px-6">
-
+    <div className="sticky top-0 z-50 flex justify-center px-4 pb-2 pt-4 sm:px-6 pointer-events-none">
+      <motion.nav
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="pointer-events-auto relative flex h-16 w-full max-w-5xl items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-gradient-to-b before:from-white/5 before:to-transparent sm:px-6"
+      >
         {/* Logo */}
-        <NavLink to="/" className="flex items-center gap-3 no-underline">
-          <img src="/logo.png" alt="Algovia Logo" className="h-9 w-9 rounded-lg object-cover drop-shadow-[0_0_5px_rgba(103,232,249,0.5)]" />
-          <span className="text-xl font-extrabold tracking-tight text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">Algovia</span>
+        <NavLink to="/" className="group relative flex items-center gap-3 no-underline">
+          <div className="relative">
+            <div className="absolute -inset-2 rounded-full bg-cyan-400/20 opacity-0 blur-md transition-opacity duration-500 group-hover:opacity-100" />
+            <img 
+              src="/logo.png" 
+              alt="Algovia Logo" 
+              className="relative h-9 w-9 rounded-lg object-cover shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-transform duration-300 group-hover:scale-105" 
+            />
+          </div>
+          <span className="text-xl font-extrabold tracking-tight text-white transition-colors duration-300 group-hover:text-cyan-300">
+            Algovia
+          </span>
         </NavLink>
 
-        {/* Center nav links (only when authenticated) */}
+        {/* Center nav links */}
         {isAuthenticated && (
-          <div className="hidden items-center gap-1 md:flex">
-            <NavLink to="/" className={navLinkClass}>Home</NavLink>
-            <NavLink to="/problems" className={navLinkClass}>Problems</NavLink>
+          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-1.5 md:flex shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]">
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <NavLink
+                  key={link.name}
+                  to={link.path}
+                  className={`relative rounded-lg px-5 py-2 text-sm font-semibold transition-colors duration-300 no-underline
+                    ${isActive ? "text-cyan-300" : "text-slate-400 hover:text-white"}`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      className="absolute inset-0 z-[-1] rounded-lg bg-cyan-400/10 shadow-[inset_0_0_12px_rgba(34,211,238,0.2)] border border-cyan-400/20"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  {link.name}
+                </NavLink>
+              );
+            })}
           </div>
         )}
 
         {/* Right slot */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-3">
           {/* GitHub icon button */}
           <a
-            href="https://github.com/nilanshukumarsingh"
+            href="https://github.com/nilanshukumarsingh/algovia"
             target="_blank"
             rel="noreferrer"
             aria-label="GitHub"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-400 transition hover:border-white/20 hover:bg-white/5 hover:text-white no-underline"
+            className="group relative hidden h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] no-underline sm:flex"
           >
-            <Github size={16} />
+            <Github size={18} className="transition-transform duration-300 group-hover:scale-110" />
           </a>
 
           {rightSlot ? rightSlot : (
             isAuthenticated ? (
               <NavLink
                 to="/problems"
-                className="rounded-xl bg-[#67e8f9] px-4 py-2 text-sm font-extrabold text-black shadow-[0_0_15px_rgba(103,232,249,0.5)] transition-all duration-300 hover:scale-105 hover:bg-cyan-300 no-underline sm:px-5"
+                className="group relative overflow-hidden rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-extrabold text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] no-underline"
               >
-                Dashboard
+                <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-150%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(150%)]">
+                  <div className="relative h-full w-8 bg-white/40" />
+                </div>
+                <span className="relative">Dashboard</span>
               </NavLink>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 <NavLink
                   to="/login"
                   className={({ isActive }) =>
-                    `rounded-xl border border-white/20 bg-transparent px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/5 no-underline sm:px-5
-                     ${isActive ? "text-cyan-300" : ""}`
+                    `relative rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 no-underline hover:bg-white/5
+                     ${isActive ? "text-cyan-300" : "text-slate-300 hover:text-white"}`
                   }
                 >
                   Log in
                 </NavLink>
                 <NavLink
                   to="/signup"
-                  className="rounded-xl bg-[#67e8f9] px-4 py-2 text-sm font-extrabold text-black shadow-[0_0_15px_rgba(103,232,249,0.5)] transition-all duration-300 hover:scale-105 hover:bg-cyan-300 no-underline sm:px-5"
+                  className="group relative overflow-hidden rounded-xl bg-white px-5 py-2.5 text-sm font-extrabold text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] no-underline"
                 >
-                  Sign up
+                  <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-150%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(150%)]">
+                    <div className="relative h-full w-8 bg-black/10" />
+                  </div>
+                  <span className="relative">Sign up</span>
                 </NavLink>
-              </>
+              </div>
             )
           )}
         </div>
-      </div>
-    </nav>
+      </motion.nav>
+    </div>
   );
 }

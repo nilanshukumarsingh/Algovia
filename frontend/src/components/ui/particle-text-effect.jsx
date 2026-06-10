@@ -140,7 +140,15 @@ export function ParticleTextEffect({ words = ["HELLO", "21st.dev", "ParticleText
     const offscreenCtx = offscreenCanvas.getContext("2d")
 
     offscreenCtx.fillStyle = "white"
-    offscreenCtx.font = "bold 250px Arial"
+    
+    // Dynamically scale font size so long words like "ALGORITHMS" don't get cut off
+    let fontSize = 250;
+    offscreenCtx.font = `bold ${fontSize}px Arial`;
+    while (offscreenCtx.measureText(word).width > canvas.width - 200 && fontSize > 50) {
+      fontSize -= 10;
+      offscreenCtx.font = `bold ${fontSize}px Arial`;
+    }
+    
     offscreenCtx.textAlign = "center"
     offscreenCtx.textBaseline = "middle"
     offscreenCtx.fillText(word, canvas.width / 2, canvas.height / 2)

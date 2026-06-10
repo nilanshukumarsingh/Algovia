@@ -45,7 +45,7 @@ export function CinematicAutumnBackground() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(15,0,0,1)_0%,_rgba(3,0,0,1)_100%)]" />
 
       {/* Subtle 20px Grid Overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.05] mix-blend-screen"
         style={{
           backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.5) 1px, transparent 1px)`,
@@ -82,11 +82,11 @@ export function CinematicAutumnBackground() {
       ))}
 
       {/* Subtle Noise Texture */}
-      <div 
-        className="absolute inset-0 opacity-[0.035] mix-blend-screen" 
+      <div
+        className="absolute inset-0 opacity-[0.035] mix-blend-screen"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}
       />
-      
+
       {/* Drifting Data Fragments (Upward Parallax) */}
       {fragments.map((frag) => (
         <motion.div
@@ -102,9 +102,9 @@ export function CinematicAutumnBackground() {
           animate={{
             y: ['110vh', '-10vh'], // Drift upwards
             x: [
-              '0px', 
-              `${frag.swayAmount}px`, 
-              `-${frag.swayAmount * 0.5}px`, 
+              '0px',
+              `${frag.swayAmount}px`,
+              `-${frag.swayAmount * 0.5}px`,
               '0px'
             ],
             rotate: [0, 360],
@@ -136,12 +136,12 @@ export function CinematicAutumnBackground() {
       ))}
 
       {/* Scanline Effect */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0 w-full h-[10vh] bg-gradient-to-b from-transparent via-white to-transparent opacity-[0.015]"
         animate={{ y: ['-10vh', '110vh'] }}
         transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
       />
-      
+
       {/* Deep Vignette */}
       <div className="absolute inset-0 shadow-[inset_0_0_180px_rgba(0,0,0,1)]" />
     </div>

@@ -2,9 +2,9 @@ import { NavLink } from "react-router";
 import { useEffect, useState } from "react";
 
 const SOCIAL_LINKS = [
-  { label: "LinkedIn", href: "https://linkedin.com/in/nilanshukumarsingh/" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/nilanshukumarsingh/" },
   { label: "X", href: "https://x.com/nilanshukumar81" },
-  { label: "GitHub", href: "https://github.com/nilanshukumarsingh/" },
+  { label: "GitHub", href: "https://github.com/nilanshukumarsingh/algovia" },
 ];
 
 export default function Footer() {
