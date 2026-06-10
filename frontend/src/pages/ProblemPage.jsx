@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import Editor from '@monaco-editor/react';
-import { useParams } from 'react-router';
+import { useParams, NavLink } from 'react-router';
 import axiosClient from "../utils/axiosClient"
 import SubmissionHistory from "../components/SubmissionHistory"
 import ChatAi from '../components/ChatAi';
 import Editorial from '../components/Editorial';
+import { ArrowLeft } from 'lucide-react';
 
 const langMap = {
   cpp: 'C++',
@@ -115,9 +116,44 @@ const ProblemPage = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#07080d] text-slate-200 font-['Syne',sans-serif]">
-      {/* ── LEFT PANEL ── */}
-      <div className="flex w-1/2 flex-col border-r border-cyan-300/15">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#07080d] text-slate-200 font-['Syne',sans-serif]">
+      {/* ── HEADER BAR ── */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-cyan-300/15 bg-[#111318] px-6">
+        <div className="flex items-center gap-4">
+          <NavLink
+            to="/problems"
+            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white no-underline"
+          >
+            <ArrowLeft size={14} /> Back to Problems
+          </NavLink>
+          <div className="h-4 w-px bg-cyan-300/15" />
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="Algovia Logo" className="h-6 w-6 rounded-lg object-cover" />
+            <span className="text-sm font-extrabold text-white">Algovia</span>
+          </div>
+        </div>
+
+        {problem && (
+          <div className="hidden items-center gap-3 sm:flex">
+            <h1 className="text-sm font-extrabold text-slate-100">{problem.title}</h1>
+            <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize tracking-wider ${getDifficultyColor(problem.difficulty)}`}>
+              {problem.difficulty}
+            </span>
+            <span className="rounded-md border border-cyan-500/15 bg-cyan-500/[0.08] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-500">
+              {problem.tags}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Workspace</span>
+        </div>
+      </header>
+
+      {/* ── MAIN WORKSPACE ── */}
+      <div className="flex flex-1 flex-row overflow-hidden">
+        {/* ── LEFT PANEL ── */}
+        <div className="flex w-1/2 flex-col border-r border-cyan-300/15">
         <div className="flex shrink-0 items-center gap-0.5 border-b border-cyan-300/15 bg-[#111318] px-3">
           {['description', 'editorial', 'solutions', 'submissions', 'chatAI'].map(tab => (
             <button
@@ -311,19 +347,21 @@ const ProblemPage = () => {
                     </div>
                   ) : (
                     <div>
-                      <div className="mb-2 text-base font-bold text-[#f87171]">❌ Error</div>
-                      <div className="mt-3">
-                        {runResult.testCases.map((tc, i) => (
-                          <div key={i} className="mt-2 rounded-lg border border-cyan-300/10 bg-[#0d0f14]/80 p-3 text-[0.78rem] leading-relaxed text-slate-400">
-                            <div><strong className="text-slate-300">Input:</strong> {tc.stdin}</div>
-                            <div><strong className="text-slate-300">Expected:</strong> {tc.expected_output}</div>
-                            <div><strong className="text-slate-300">Output:</strong> {tc.stdout}</div>
-                            <div className={tc.status_id == 3 ? 'font-semibold text-green-400' : 'font-semibold text-red-400'}>
-                              {tc.status_id == 3 ? '✓ Passed' : '✗ Failed'}
+                      <div className="mb-2 text-base font-bold text-[#f87171]">❌ {runResult.error || 'Error'}</div>
+                      {runResult.testCases && (
+                        <div className="mt-3">
+                          {runResult.testCases.map((tc, i) => (
+                            <div key={i} className="mt-2 rounded-lg border border-cyan-300/10 bg-[#0d0f14]/80 p-3 text-[0.78rem] leading-relaxed text-slate-400">
+                              <div><strong className="text-slate-300">Input:</strong> {tc.stdin}</div>
+                              <div><strong className="text-slate-300">Expected:</strong> {tc.expected_output}</div>
+                              <div><strong className="text-slate-300">Output:</strong> {tc.stdout}</div>
+                              <div className={tc.status_id == 3 ? 'font-semibold text-green-400' : 'font-semibold text-red-400'}>
+                                {tc.status_id == 3 ? '✓ Passed' : '✗ Failed'}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -360,7 +398,8 @@ const ProblemPage = () => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default ProblemPage;
