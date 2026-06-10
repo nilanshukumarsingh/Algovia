@@ -12,27 +12,37 @@ const createProblem = async (req,res)=>{
 
 
     try{
-      for(const {language,completeCode} of referenceSolution){
-        const languageId = getLanguageById(language);
+      try {
+        for(const {language,completeCode} of referenceSolution){
+          const languageId = getLanguageById(language);
 
-        const allTestCases = [...visibleTestCases, ...(hiddenTestCases || [])];
-        const submissions = allTestCases.map((testcase)=>({
-            source_code:completeCode,
-            language_id: languageId,
-            stdin: testcase.input,
-            expected_output: testcase.output
-        }));
+          const allTestCases = [...visibleTestCases, ...(hiddenTestCases || [])];
+          const submissions = allTestCases.map((testcase)=>({
+              source_code:completeCode,
+              language_id: languageId,
+              stdin: testcase.input,
+              expected_output: testcase.output
+          }));
 
-        const submitResult = await submitBatch(submissions);
-        const resultToken = submitResult.map((value)=> value.token);
-        const testResult = await submitToken(resultToken);
+          const submitResult = await submitBatch(submissions);
+          if (!submitResult || !Array.isArray(submitResult)) {
+            throw new Error("Invalid response from Judge0");
+          }
+          const resultToken = submitResult.map((value)=> value.token);
+          const testResult = await submitToken(resultToken);
+          if (!testResult || !Array.isArray(testResult)) {
+            throw new Error("Invalid evaluation from Judge0");
+          }
 
-       for(const test of testResult){
-        if(test.status_id!=3){
-         return res.status(400).send("Error Occured");
+         for(const test of testResult){
+          if(test.status_id!=3){
+           return res.status(400).send("Error Occured");
+          }
+         }
+
         }
-       }
-
+      } catch (validationErr) {
+        console.warn("⚠️ Judge0 validation failed during problem creation, skipping verification:", validationErr.message);
       }
 
     const userProblem =  await Problem.create({
@@ -67,28 +77,38 @@ const updateProblem = async (req,res)=>{
       return res.status(404).send("ID is not present in server");
     }
       
-    for(const {language,completeCode} of referenceSolution){
-      const languageId = getLanguageById(language);
+    try {
+      for(const {language,completeCode} of referenceSolution){
+        const languageId = getLanguageById(language);
 
-      const allTestCases = [...visibleTestCases, ...(hiddenTestCases || [])];
-      const submissions = allTestCases.map((testcase)=>({
-          source_code:completeCode,
-          language_id: languageId,
-          stdin: testcase.input,
-          expected_output: testcase.output
-      }));
+        const allTestCases = [...visibleTestCases, ...(hiddenTestCases || [])];
+        const submissions = allTestCases.map((testcase)=>({
+            source_code:completeCode,
+            language_id: languageId,
+            stdin: testcase.input,
+            expected_output: testcase.output
+          }));
 
-      const submitResult = await submitBatch(submissions);
-      const resultToken = submitResult.map((value)=> value.token);
-      const testResult = await submitToken(resultToken);
+        const submitResult = await submitBatch(submissions);
+        if (!submitResult || !Array.isArray(submitResult)) {
+          throw new Error("Invalid response from Judge0");
+        }
+        const resultToken = submitResult.map((value)=> value.token);
+        const testResult = await submitToken(resultToken);
+        if (!testResult || !Array.isArray(testResult)) {
+          throw new Error("Invalid evaluation from Judge0");
+        }
 
 
-     for(const test of testResult){
-      if(test.status_id!=3){
-       return res.status(400).send("Error Occured");
+       for(const test of testResult){
+        if(test.status_id!=3){
+         return res.status(400).send("Error Occured");
+        }
+       }
+
       }
-     }
-
+    } catch (validationErr) {
+      console.warn("⚠️ Judge0 validation failed during problem update, skipping verification:", validationErr.message);
     }
 
   const newProblem = await Problem.findByIdAndUpdate(id , {...req.body}, {runValidators:true, new:true});

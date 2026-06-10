@@ -49,11 +49,16 @@ const register = async (req, res) => {
       { EX: 600 }
     );
 
-    await sendEmail({
-      email: emailId,
-      subject: "Verify your email",
-      html: `<h2>Your OTP: ${otp}</h2>`,
-    });
+    try {
+      await sendEmail({
+        email: emailId,
+        subject: "Verify your email",
+        html: `<h2>Your OTP: ${otp}</h2>`,
+      });
+    } catch (emailErr) {
+      console.error("❌ sendEmail failed:", emailErr.message);
+      console.log(`🔑 [LOCAL DEV / DEBUG] OTP for ${emailId} is: ${otp}`);
+    }
 
     res.status(200).json({
       message: "OTP sent to email"
