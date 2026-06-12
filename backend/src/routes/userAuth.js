@@ -3,7 +3,7 @@ const authRouter = express.Router();
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const redisClient = require("../config/redis");
-const { register, login, logout, adminRegister, deleteProfile, verifyOTP, resendOTP } = require('../controllers/userAuthent');
+const { register, login, logout, adminRegister, deleteProfile, verifyOTP, resendOTP, forgotPassword, resetPassword } = require('../controllers/userAuthent');
 const userMiddleware = require("../middleware/userMiddleware");
 const adminMiddleware = require('../middleware/adminMiddleware');
 
@@ -12,6 +12,8 @@ authRouter.post('/login', login);
 authRouter.post('/logout', userMiddleware, logout);
 authRouter.post("/verify-otp", verifyOTP);
 authRouter.post("/resend-otp", resendOTP);
+authRouter.post("/forgot-password", forgotPassword);
+authRouter.post("/reset-password", resetPassword);
 authRouter.post('/admin/register', adminMiddleware, adminRegister);
 authRouter.delete('/deleteProfile', userMiddleware, deleteProfile);
 

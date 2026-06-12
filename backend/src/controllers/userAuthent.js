@@ -456,4 +456,157 @@ const deleteProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, adminRegister, deleteProfile, verifyOTP, resendOTP };
+const forgotPassword = async (req, res) => {
+  try {
+    const { emailId } = req.body;
+
+    if (!emailId) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ emailId });
+    if (!user) {
+      return res.status(404).json({ message: "Email address not found" });
+    }
+
+    const cooldown = await redisClient.get(`password_reset_cooldown:${emailId}`);
+    if (cooldown) {
+      return res.status(400).json({ message: "Wait 30 seconds before retry" });
+    }
+
+    await redisClient.set(`password_reset_cooldown:${emailId}`, "1", { EX: 30 });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await redisClient.set(`password_reset_otp:${emailId}`, otp, { EX: 600 });
+
+    let emailSent = true;
+    try {
+      await sendEmail({
+        email: emailId,
+        subject: "Reset your Algovia Password",
+        html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Reset your Algovia Password</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #030014; margin: 0; padding: 40px 0; color: #e2e8f0;">
+          <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; background-color: #09090f; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);">
+            <!-- Logo Header -->
+            <tr>
+              <td style="padding: 40px 40px 20px 40px; text-align: center;">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%); padding: 10px 14px; border-radius: 12px; font-weight: 900; color: #ffffff; font-size: 18px; font-family: monospace; letter-spacing: -1px; box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);">
+                      &lt;/&gt;
+                    </td>
+                    <td style="padding-left: 12px; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                      Algovia
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Divider -->
+            <tr>
+              <td style="padding: 0 40px;">
+                <div style="height: 1px; background: linear-gradient(90deg, rgba(30,41,59,0), #1e293b, rgba(30,41,59,0));"></div>
+              </td>
+            </tr>
+            <!-- Body Content -->
+            <tr>
+              <td style="padding: 30px 40px 40px 40px; text-align: center;">
+                <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin: 0 0 10px 0; letter-spacing: -0.5px;">Reset your password</h2>
+                <p style="font-size: 14px; line-height: 22px; color: #94a3b8; margin: 0 0 30px 0;">
+                  You requested a password reset for your Algovia account. Please use the verification code below to authorize the change:
+                </p>
+                
+                <!-- Verification Code Block -->
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 30px auto; width: 100%;">
+                  <tr>
+                    <td style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 24px 10px; text-align: center; box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.05);">
+                      <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #ef4444; padding-left: 8px;">\${otp}</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="font-size: 12px; line-height: 18px; color: #64748b; margin: 0 0 12px 0;">
+                  This code is valid for <strong>10 minutes</strong> and should not be shared with anyone.
+                </p>
+                <p style="font-size: 11px; line-height: 16px; color: #475569; margin: 0;">
+                  If you did not request this password reset, please change your password immediately or contact support.
+                </p>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td style="background-color: #05050a; padding: 24px 40px; text-align: center; border-top: 1px solid #121824;">
+                <p style="font-size: 11px; color: #475569; margin: 0; line-height: 16px;">
+                  Build, practice, and master DSA with AI assistance.<br>
+                  &copy; 2026 Algovia. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        `,
+      });
+    } catch (emailErr) {
+      console.error("❌ Send password reset email failed:", emailErr.message);
+      console.log(`🔑 [LOCAL DEV / DEBUG] Reset OTP for ${emailId} is: ${otp}`);
+      emailSent = false;
+    }
+
+    res.status(200).json({
+      message: emailSent ? "Reset code sent to email" : "Reset code generated (Failed to deliver email. Check developer logs.)",
+      devOtp: !emailSent ? otp : undefined
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Password reset request failed" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { emailId, otp, newPassword } = req.body;
+
+    if (!emailId || !otp || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
+    const savedOtp = await redisClient.get(`password_reset_otp:${emailId}`);
+    if (!savedOtp) {
+      return res.status(400).json({ message: "Reset code expired or invalid request" });
+    }
+
+    if (savedOtp !== otp.toString()) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const user = await User.findOneAndUpdate(
+      { emailId },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await redisClient.del(`password_reset_otp:${emailId}`);
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to reset password" });
+  }
+};
+
+module.exports = { register, login, logout, adminRegister, deleteProfile, verifyOTP, resendOTP, forgotPassword, resetPassword };
