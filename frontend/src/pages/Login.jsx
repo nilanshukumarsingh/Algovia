@@ -98,17 +98,9 @@ export default function Login() {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label htmlFor="password" className="block text-xs font-semibold text-slate-300 font-['Plus_Jakarta_Sans',sans-serif]">
-                  Password
-                </label>
-                <NavLink
-                  to="/forgot-password"
-                  className="text-xs font-bold text-rose-400 transition hover:text-rose-300 no-underline font-['Plus_Jakarta_Sans',sans-serif]"
-                >
-                  Forgot password?
-                </NavLink>
-              </div>
+              <label htmlFor="password" className="mb-1.5 block text-xs font-semibold text-slate-300">
+                Password
+              </label>
               <div className="relative">
                 <Lock size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
                 <input
@@ -130,7 +122,16 @@ export default function Login() {
                 </button>
               </div>
               {errors.password && <p className="mt-1 text-xs font-medium text-red-400">{errors.password.message}</p>}
+              <div className="mt-2 text-right">
+                <NavLink
+                  to="/forgot-password"
+                  className="text-xs font-bold text-rose-400 transition hover:text-rose-300 no-underline font-['Plus_Jakarta_Sans',sans-serif]"
+                >
+                  Forgot password?
+                </NavLink>
+              </div>
             </div>
+
 
             <button
               type="submit"
