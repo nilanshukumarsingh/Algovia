@@ -9,9 +9,42 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.28); border-radius: 3px; }
+/* Global Custom Scrollbar (Webkit: Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.35);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.55);
+}
+
+/* Global Custom Scrollbar (Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(244, 63, 94, 0.35) transparent;
+}
+
+/* Monaco Editor Scrollbar Customization */
+.monaco-editor .scrollbar {
+  background: transparent !important;
+}
+.monaco-editor .scrollbar .slider {
+  background: rgba(244, 63, 94, 0.3) !important;
+  border-radius: 4px !important;
+}
+.monaco-editor .scrollbar .slider:hover {
+  background: rgba(244, 63, 94, 0.5) !important;
+}
+.monaco-editor .scrollbar .slider:active {
+  background: rgba(244, 63, 94, 0.7) !important;
+}
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
