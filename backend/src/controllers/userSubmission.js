@@ -17,6 +17,9 @@ const submitCode = async (req, res) => {
       language = 'c++';
 
     const problem = await Problem.findById(problemId);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
 
     const submittedResult = await Submission.create({
       userId,
@@ -24,7 +27,7 @@ const submitCode = async (req, res) => {
       code,
       language,
       status: 'pending',
-      testCasesTotal: problem.hiddenTestCases.length
+      testCasesTotal: problem.hiddenTestCases ? problem.hiddenTestCases.length : 0
     });
 
     const languageId = getLanguageById(language);
@@ -89,7 +92,10 @@ const submitCode = async (req, res) => {
 
     await submittedResult.save();
 
-    const hasSolved = req.result.problemSolved.some(id => id.toString() === problemId);
+    if (!req.result.problemSolved) {
+      req.result.problemSolved = [];
+    }
+    const hasSolved = req.result.problemSolved.some(id => id && id.toString() === problemId);
     if (!hasSolved) {
       req.result.problemSolved.push(problemId);
       await req.result.save();
@@ -104,6 +110,7 @@ const submitCode = async (req, res) => {
       memory
     });
   } catch (err) {
+    console.error("Error in submitCode:", err);
     res.status(500).json({ message: "Submission failed. Please try again." });
   }
 };
@@ -119,6 +126,9 @@ const runCode = async (req, res) => {
       return res.status(400).json({ message: "Some field missing" });
 
     const problem = await Problem.findById(problemId);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
 
     if (language === 'cpp')
       language = 'c++';
@@ -179,6 +189,7 @@ const runCode = async (req, res) => {
       memory
     });
   } catch (err) {
+    console.error("Error in runCode:", err);
     res.status(500).json({ message: "Code execution failed. Please try again." });
   }
 };
