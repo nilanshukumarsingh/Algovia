@@ -1,13 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @plugin "daisyui";
 
-
-
-
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: #07080d;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: #030000;
   color: #e2e8f0;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -57,8 +53,8 @@ body {
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 0.2);
   --sidebar-ring: oklch(1 0 0 / 0.3);
-  --font-geist-sans: "Geist Sans", sans-serif;
-  --font-geist-mono: "Geist Mono", monospace;
+  --font-geist-sans: "Plus Jakarta Sans", sans-serif;
+  --font-geist-mono: "JetBrains Mono", monospace;
 }
 
 .dark {

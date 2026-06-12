@@ -5,8 +5,8 @@ import { z } from "zod";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router";
 import { registerUser } from "../authSlice";
-import { motion } from "framer-motion";
-import { User, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 import { CinematicAutumnBackground } from "../components/ui/cinematic-autumn-background";
 
 const signupSchema = z.object({
@@ -25,6 +25,7 @@ const inputClass =
 
 export default function Signup() {
   const [showPw, setShowPw] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "" });
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useSelector((s) => s.auth);
@@ -40,8 +41,11 @@ export default function Signup() {
   const onSubmit = async (data) => {
     try {
       const res = await dispatch(registerUser(data)).unwrap();
-      alert(res.message);
-      navigate("/verify-email", { state: { email: data.emailId } });
+      setToast({ show: true, message: res.message });
+      setTimeout(() => {
+        setToast({ show: false, message: "" });
+        navigate("/verify-email", { state: { email: data.emailId, devOtp: res.devOtp } });
+      }, 2000);
     } catch { /* handled by Redux */ }
   };
 
@@ -158,6 +162,22 @@ export default function Signup() {
           </NavLink>
         </motion.p>
       </motion.section>
+
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/80 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+              <CheckCircle2 size={16} />
+            </div>
+            <span className="text-sm font-semibold text-white">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
