@@ -46,7 +46,7 @@ const ProblemPage = () => {
         setCode(initialCode);
         
         const solvedList = solvedRes.data || [];
-        setIsSolved(solvedList.some(p => p._id === problemId));
+        setIsSolved(solvedList.some(p => p && p._id === problemId));
         
         setLoading(false);
       } catch (error) {
