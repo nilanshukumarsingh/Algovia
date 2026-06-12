@@ -14,6 +14,7 @@ import AdminVideo from "./components/AdminVideo";
 import AdminDelete from "./components/AdminDelete";
 import AdminUpload from "./components/AdminUpload";
 import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   const dispatch = useDispatch();
@@ -38,6 +39,8 @@ function App() {
       <Route path="/login" element={isAuthenticated ? <Navigate to="/problems" /> : <Login />} />
       <Route path="/signup" element={isAuthenticated ? <Navigate to="/problems" /> : <Signup />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+
       <Route path="/problem/:problemId" element={isAuthenticated ? <ProblemPage /> : <Navigate to="/login" />} />
       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
       <Route path="/admin/create" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
