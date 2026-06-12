@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const main = require('./config/db');

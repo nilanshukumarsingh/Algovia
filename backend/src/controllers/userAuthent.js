@@ -49,19 +49,89 @@ const register = async (req, res) => {
       { EX: 600 }
     );
 
+    let emailSent = true;
     try {
       await sendEmail({
         email: emailId,
-        subject: "Verify your email",
-        html: `<h2>Your OTP: ${otp}</h2>`,
+        subject: "Verify your Algovia Account",
+        html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Confirm your Algovia Account</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #030014; margin: 0; padding: 40px 0; color: #e2e8f0;">
+          <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; background-color: #09090f; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);">
+            <!-- Logo Header -->
+            <tr>
+              <td style="padding: 40px 40px 20px 40px; text-align: center;">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%); padding: 10px 14px; border-radius: 12px; font-weight: 900; color: #ffffff; font-size: 18px; font-family: monospace; letter-spacing: -1px; box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);">
+                      &lt;/&gt;
+                    </td>
+                    <td style="padding-left: 12px; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                      Algovia
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Divider -->
+            <tr>
+              <td style="padding: 0 40px;">
+                <div style="height: 1px; background: linear-gradient(90deg, rgba(30,41,59,0), #1e293b, rgba(30,41,59,0));"></div>
+              </td>
+            </tr>
+            <!-- Body Content -->
+            <tr>
+              <td style="padding: 30px 40px 40px 40px; text-align: center;">
+                <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin: 0 0 10px 0; letter-spacing: -0.5px;">Verify your identity</h2>
+                <p style="font-size: 14px; line-height: 22px; color: #94a3b8; margin: 0 0 30px 0;">
+                  A request was made to sign up for an Algovia account. Please use the verification code below to authorize your registration:
+                </p>
+                
+                <!-- Verification Code Block -->
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 30px auto; width: 100%;">
+                  <tr>
+                    <td style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 24px 10px; text-align: center; box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.05);">
+                      <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #ef4444; padding-left: 8px;">${otp}</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="font-size: 12px; line-height: 18px; color: #64748b; margin: 0 0 12px 0;">
+                  This code is valid for <strong>10 minutes</strong> and should not be shared with anyone.
+                </p>
+                <p style="font-size: 11px; line-height: 16px; color: #475569; margin: 0;">
+                  If you did not initiate this request, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td style="background-color: #05050a; padding: 24px 40px; text-align: center; border-top: 1px solid #121824;">
+                <p style="font-size: 11px; color: #475569; margin: 0; line-height: 16px;">
+                  Build, practice, and master DSA with AI assistance.<br>
+                  &copy; 2026 Algovia. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        `,
       });
     } catch (emailErr) {
       console.error("❌ sendEmail failed:", emailErr.message);
       console.log(`🔑 [LOCAL DEV / DEBUG] OTP for ${emailId} is: ${otp}`);
+      emailSent = false;
     }
 
     res.status(200).json({
-      message: "OTP sent to email"
+      message: emailSent ? "OTP sent to email" : "OTP generated (Failed to deliver email. Check developer logs.)",
+      devOtp: !emailSent ? otp : undefined
     });
 
   } catch (err) {
@@ -246,6 +316,135 @@ const adminRegister = async (req, res) => {
   }
 };
 
+const resendOTP = async (req, res) => {
+  try {
+    const { emailId } = req.body;
+
+    if (!emailId) {
+      return res.status(400).json({
+        message: "Email is required"
+      });
+    }
+
+    const data = await redisClient.get(`otp:${emailId}`);
+    if (!data) {
+      return res.status(400).json({
+        message: "Session expired or invalid email. Please register again."
+      });
+    }
+
+    const cooldown = await redisClient.get(`otp_cooldown:${emailId}`);
+    if (cooldown) {
+      return res.status(400).json({
+        message: "Wait 30 seconds before retry"
+      });
+    }
+
+    await redisClient.set(`otp_cooldown:${emailId}`, "1", { EX: 30 });
+
+    const parsedData = JSON.parse(data);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    parsedData.otp = otp;
+
+    await redisClient.set(
+      `otp:${emailId}`,
+      JSON.stringify(parsedData),
+      { EX: 600 }
+    );
+
+    let emailSent = true;
+    try {
+      await sendEmail({
+        email: emailId,
+        subject: "Verify your Algovia Account",
+        html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Confirm your Algovia Account</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #030014; margin: 0; padding: 40px 0; color: #e2e8f0;">
+          <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; background-color: #09090f; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);">
+            <!-- Logo Header -->
+            <tr>
+              <td style="padding: 40px 40px 20px 40px; text-align: center;">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%); padding: 10px 14px; border-radius: 12px; font-weight: 900; color: #ffffff; font-size: 18px; font-family: monospace; letter-spacing: -1px; box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);">
+                      &lt;/&gt;
+                    </td>
+                    <td style="padding-left: 12px; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                      Algovia
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Divider -->
+            <tr>
+              <td style="padding: 0 40px;">
+                <div style="height: 1px; background: linear-gradient(90deg, rgba(30,41,59,0), #1e293b, rgba(30,41,59,0));"></div>
+              </td>
+            </tr>
+            <!-- Body Content -->
+            <tr>
+              <td style="padding: 30px 40px 40px 40px; text-align: center;">
+                <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin: 0 0 10px 0; letter-spacing: -0.5px;">Verify your identity</h2>
+                <p style="font-size: 14px; line-height: 22px; color: #94a3b8; margin: 0 0 30px 0;">
+                  A request was made to sign up for an Algovia account. Please use the verification code below to authorize your registration:
+                </p>
+                
+                <!-- Verification Code Block -->
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 30px auto; width: 100%;">
+                  <tr>
+                    <td style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 24px 10px; text-align: center; box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.05);">
+                      <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #ef4444; padding-left: 8px;">${otp}</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="font-size: 12px; line-height: 18px; color: #64748b; margin: 0 0 12px 0;">
+                  This code is valid for <strong>10 minutes</strong> and should not be shared with anyone.
+                </p>
+                <p style="font-size: 11px; line-height: 16px; color: #475569; margin: 0;">
+                  If you did not initiate this request, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td style="background-color: #05050a; padding: 24px 40px; text-align: center; border-top: 1px solid #121824;">
+                <p style="font-size: 11px; color: #475569; margin: 0; line-height: 16px;">
+                  Build, practice, and master DSA with AI assistance.<br>
+                  &copy; 2026 Algovia. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        `,
+      });
+    } catch (emailErr) {
+      console.error("❌ sendEmail failed:", emailErr.message);
+      console.log(`🔑 [LOCAL DEV / DEBUG] OTP for ${emailId} is: ${otp}`);
+      emailSent = false;
+    }
+
+    res.status(200).json({
+      message: emailSent ? "OTP sent to email" : "OTP generated (Failed to deliver email. Check developer logs.)",
+      devOtp: !emailSent ? otp : undefined
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Resend OTP failed"
+    });
+  }
+};
+
 const deleteProfile = async (req, res) => {
   try {
     const userId = req.result._id;
@@ -257,4 +456,4 @@ const deleteProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, adminRegister, deleteProfile, verifyOTP };
+module.exports = { register, login, logout, adminRegister, deleteProfile, verifyOTP, resendOTP };

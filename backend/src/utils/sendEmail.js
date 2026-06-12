@@ -31,8 +31,17 @@ const sendEmail = async ({ email, subject, html }) => {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       console.log("🔴 BREVO ERROR:", errorData);
+      if (
+        (errorData.code === "unauthorized" || errorData.message === "Key not found") &&
+        apiKey &&
+        apiKey.startsWith("xsmtpsib-")
+      ) {
+        console.log("💡 TIP: Your BREVO_API_KEY starts with 'xsmtpsib-' which is an SMTP key.");
+        console.log("   Brevo's Web API requires a transaction API key starting with 'xkeysib-'.");
+        console.log("   Please generate an API Key in Brevo under SMTP & API > API Keys (not SMTP keys).");
+      }
       throw new Error("Failed to send email");
     }
 
