@@ -50,22 +50,27 @@ function ChatAi({ problem }) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0c0c14] rounded-xl border border-white/5 overflow-hidden">
+        <div className="flex flex-col h-full bg-[#0c0202] rounded-xl border border-rose-500/10 overflow-hidden">
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-rose-500/10 bg-[#0f0707] px-6 py-3">
+                <span className="text-sm font-black uppercase tracking-wider text-slate-200">Chat with AI</span>
+            </div>
+
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-rose-500/20 scrollbar-track-transparent">
                 {messages.map((msg, index) => (
                     <div key={index} className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                         <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
                             msg.role === "user" 
-                            ? "border-cyan-300/20 bg-cyan-300/10 text-cyan-400" 
+                            ? "border-rose-500/20 bg-rose-500/10 text-rose-400" 
                             : "border-white/10 bg-white/5 text-slate-400"
                         }`}>
                             {msg.role === "user" ? <User size={16} /> : <Bot size={16} />}
                         </div>
                         <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                             msg.role === "user" 
-                            ? "bg-cyan-300/10 text-cyan-100 border border-cyan-300/10" 
-                            : "bg-white/[0.03] text-slate-300 border border-white/5"
+                            ? "bg-rose-500/10 text-rose-100 border border-rose-500/10" 
+                            : "bg-white/[0.03] text-slate-350 border border-white/5"
                         }`}>
                             {msg.parts[0].text}
                         </div>
@@ -87,18 +92,18 @@ function ChatAi({ problem }) {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSubmit(onSubmit)} className="p-4 bg-slate-900/40 border-t border-white/5">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-4 bg-black/45 border-t border-rose-500/10">
                 <div className="relative flex items-center">
                     <input 
                         {...register("message", { required: true })}
                         placeholder="Ask for a hint..." 
                         autoComplete="off"
-                        className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 pr-12 text-sm text-white outline-none transition focus:border-cyan-300/50" 
+                        className="w-full rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 pr-12 text-sm text-white outline-none transition focus:border-rose-500/30" 
                     />
                     <button 
                         type="submit" 
                         disabled={!isValid || isTyping}
-                        className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg text-cyan-400 transition hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:text-slate-600"
+                        className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-lg text-rose-400 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:text-slate-600"
                     >
                         {isTyping ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </button>
